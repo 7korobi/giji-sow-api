@@ -46,6 +46,8 @@ typings/
 # settings
 config/default.yml
 config/live.yml
+prod.sh
+prod.yml
 
 # dependencies
 node_modules
