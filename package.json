@@ -1,0 +1,53 @@
+{
+  "name": "giji-sow-api",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "node ./bin/www",
+    "gulp": "gulp",
+    "dev":                          "webpack --config config/webpack/index.coffee && node app.js",
+    "live": "cross-env NODE_ENV=live webpack --config config/webpack/index.coffee",
+    "test": "cross-env NODE_ENV=spec webpack --config config/webpack/index.coffee && ava --verbose --color"
+  },
+  "ava": {
+    "files": [
+      "spec.js"
+    ],
+    "source": [
+      "api/**",
+      "spec/**"
+    ]
+  },
+  "dependencies": {
+    "agenda": "^1.0.3",
+    "agendash": "^0.4.0",
+    "aws-sdk": "^2.219.1",
+    "coffee-loader": "^0.9.0",
+    "coffeescript": "^2.2.4",
+    "config": "^1.30.0",
+    "cookie-parser": "~1.4.3",
+    "cross-env": "^5.1.4",
+    "debug": "~2.6.9",
+    "express": "~4.16.0",
+    "firebase": "^4.12.1",
+    "gulp": "^3.9.1",
+    "gulp-brotli": "^1.2.1",
+    "gulp-gzip": "^1.4.2",
+    "gulp-load-plugins": "^1.5.0",
+    "gulp-newer": "^1.4.0",
+    "gulp-rename": "^1.2.2",
+    "gulp-shell": "^0.6.5",
+    "http-errors": "~1.6.2",
+    "iltorb": "^2.2.0",
+    "jade": "~1.11.0",
+    "mongodb-bluebird": "^0.1.2",
+    "morgan": "~1.9.0",
+    "pidusage": "^2.0.6",
+    "uglifyjs-webpack-plugin": "^1.2.4",
+    "webpack-bundle-size-analyzer": "^2.7.0",
+    "yaml-loader": "^0.5.0"
+  },
+  "devDependencies": {
+    "ava": "^0.25.0"
+  }
+}
