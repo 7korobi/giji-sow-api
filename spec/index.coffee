@@ -7,11 +7,6 @@ fs = require 'fs'
 yaml = require 'js-yaml'
 
 
-global.env =
-  game:
-    folder_id: "test"
-  url:  {}
-
 conf = yaml.load fs.readFileSync "./config/spec.yml", 'UTF-8'
 
 user =

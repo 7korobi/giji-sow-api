@@ -1,6 +1,6 @@
 sh = require 'child_process'
 
-module.exports =
+module.exports = ({url})->
   name: 'process'
   every: '2 minutes'
   define: (job, done)->
