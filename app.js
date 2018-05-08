@@ -323,16 +323,16 @@ module.exports = function(app, {url, db}) {
           for (i = 0, len = ref.length; i < len; i++) {
             id = ref[i];
             dst = `./static/sow/${id}.json.gz`;
-            src = `http:${url.api}/story/oldlog/${id}`;
+            src = `${url.api}/story/oldlog/${id}`;
             results.push(`  ls "${dst}" || curl "${src}" | gzip --stdout --best > "${dst}"  `);
           }
           return results;
         })();
         dst = "./static/sow/index.json.gz";
-        src = `http:${url.api}/story/oldlog`;
+        src = `${url.api}/story/oldlog`;
         data.push(` curl "${src}" | gzip --stdout --best > "${dst}"  `);
         dst = "./static/aggregate/faces/index.json.gz";
-        src = `http:${url.api}/aggregate/faces`;
+        src = `${url.api}/aggregate/faces`;
         data.push(` curl "${src}" | gzip --stdout --best > "${dst}"  `);
         data.push(" npm run gulp amazon:gz ");
         fs.writeFile('./static/sow.sh', data.join("\n"), function(err) {
@@ -746,7 +746,7 @@ module.exports = function({url}) {
     name: 'aggregate',
     every: '12 hours',
     define: function(job, done) {
-      return sh.exec(`curl http:${url.api}/aggregate/job`, function(err, stdout, stderr) {
+      return sh.exec(`curl ${url.api}/aggregate/job`, function(err, stdout, stderr) {
         return sh.exec("./static/sow.sh", function(err, stdout, stderr) {
           if (err) {
             return console.error(err);

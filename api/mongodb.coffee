@@ -141,15 +141,15 @@ module.exports = (app, { url, db })->
       .then ([o])->
         data = for id in o.story_ids
           dst = "./static/sow/#{id}.json.gz"
-          src = "http:#{url.api}/story/oldlog/#{id}"
+          src = "#{url.api}/story/oldlog/#{id}"
           """  ls "#{dst}" || curl "#{src}" | gzip --stdout --best > "#{dst}"  """
 
         dst = "./static/sow/index.json.gz"
-        src = "http:#{url.api}/story/oldlog"
+        src = "#{url.api}/story/oldlog"
         data.push """ curl "#{src}" | gzip --stdout --best > "#{dst}"  """
 
         dst = "./static/aggregate/faces/index.json.gz"
-        src = "http:#{url.api}/aggregate/faces"
+        src = "#{url.api}/aggregate/faces"
         data.push """ curl "#{src}" | gzip --stdout --best > "#{dst}"  """
 
         data.push """ npm run gulp amazon:gz """
