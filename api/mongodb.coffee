@@ -155,7 +155,7 @@ module.exports = (app, { url, db })->
         data.push """ npm run gulp amazon:gz """
 
         fs.writeFile './static/sow.sh', data.join("\n") , (err)->
-          fs.chmod './static/sow.sh', 0777, (err)->
+          fs.chmod './static/sow.sh', 0o777, (err)->
         false
 
     giji.scan = ->
