@@ -29,5 +29,5 @@ module.exports = (app, conf)->
           agenda.every every, name
     agenda.start()
 
-  app.use '/agendash', Agendash agenda
+  app.use '/api/agendash', Agendash agenda
   console.log "agenda use #{db.mongo}"
