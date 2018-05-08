@@ -336,7 +336,7 @@ module.exports = function(app, {url, db}) {
         data.push(` curl "${src}" | gzip --stdout --best > "${dst}"  `);
         data.push(" npm run gulp amazon:gz ");
         fs.writeFile('./static/sow.sh', data.join("\n"), function(err) {
-          return console.log(err);
+          return fs.chmod('./static/sow.sh', '+x', function(err) {});
         });
         return false;
       });
