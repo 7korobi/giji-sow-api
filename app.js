@@ -631,9 +631,13 @@ Agendash = __webpack_require__(24);
 
 ctxs = [__webpack_require__(20), __webpack_require__(21)];
 
-module.exports = function(app, {pm_id, db}) {
-  var agenda, define, i, len, name, pno;
+module.exports = function(app, conf) {
+  var agenda, db, define, i, jobs, len, name, pm_id, pno;
+  ({pm_id, db} = conf);
   pno = pm_id - 1 || 0;
+  jobs = ctxs.map(function(ctx) {
+    return ctx(conf);
+  });
   agenda = new Agenda({
     db: {
       address: db.mongo,
@@ -645,15 +649,15 @@ module.exports = function(app, {pm_id, db}) {
       }
     }
   });
-  for (i = 0, len = ctxs.length; i < len; i++) {
-    ({define, name} = ctxs[i]);
+  for (i = 0, len = jobs.length; i < len; i++) {
+    ({define, name} = jobs[i]);
     agenda.define(name, define);
   }
   agenda.on('ready', function() {
     var every, j, len1;
     if (!pno) {
-      for (j = 0, len1 = ctxs.length; j < len1; j++) {
-        ({every, name} = ctxs[j]);
+      for (j = 0, len1 = jobs.length; j < len1; j++) {
+        ({every, name} = jobs[j]);
         if (every) {
           agenda.every(every, name);
         }
@@ -661,7 +665,7 @@ module.exports = function(app, {pm_id, db}) {
     }
     return agenda.start();
   });
-  app.use('/agendash', Agendash(agenda));
+  app.use('/api/agendash', Agendash(agenda));
   return console.log(`agenda use ${db.mongo}`);
 };
 
@@ -737,20 +741,22 @@ var sh;
 
 sh = __webpack_require__(0);
 
-module.exports = {
-  name: 'aggregate',
-  every: '12 hours',
-  define: function(job, done) {
-    return sh.exec(`curl http:${env.url.api}/aggregate/job`, function(err, stdout, stderr) {
-      return sh.exec("./static/sow.sh", function(err, stdout, stderr) {
-        if (err) {
-          return console.error(err);
-        } else {
-          return console.log(stderr);
-        }
+module.exports = function({url}) {
+  return {
+    name: 'aggregate',
+    every: '12 hours',
+    define: function(job, done) {
+      return sh.exec(`curl http:${url.api}/aggregate/job`, function(err, stdout, stderr) {
+        return sh.exec("./static/sow.sh", function(err, stdout, stderr) {
+          if (err) {
+            return console.error(err);
+          } else {
+            return console.log(stderr);
+          }
+        });
       });
-    });
-  }
+    }
+  };
 };
 
 
@@ -762,19 +768,21 @@ var sh;
 
 sh = __webpack_require__(0);
 
-module.exports = {
-  name: 'process',
-  every: '2 minutes',
-  define: function(job, done) {
-    return sh.exec('ps uafxS | grep -v ^root', function(err, stdout, stderr) {
-      if (err) {
-        console.error(err);
-        return console.error(stderr);
-      } else {
-        return console.log(stdout);
-      }
-    });
-  }
+module.exports = function({url}) {
+  return {
+    name: 'process',
+    every: '2 minutes',
+    define: function(job, done) {
+      return sh.exec('ps uafxS | grep -v ^root', function(err, stdout, stderr) {
+        if (err) {
+          console.error(err);
+          return console.error(stderr);
+        } else {
+          return console.log(stdout);
+        }
+      });
+    }
+  };
 };
 
 

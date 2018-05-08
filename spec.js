@@ -1007,13 +1007,6 @@ fs = __webpack_require__(1);
 
 yaml = __webpack_require__(16);
 
-global.env = {
-  game: {
-    folder_id: "test"
-  },
-  url: {}
-};
-
 conf = yaml.load(fs.readFileSync("./config/spec.yml", 'UTF-8'));
 
 user = {

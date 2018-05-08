@@ -5,7 +5,7 @@
   "scripts": {
     "start": "node ./bin/www",
     "gulp": "gulp",
-    "dev":                          "webpack --config config/webpack/index.coffee && node app.js",
+    "dev": "webpack --config config/webpack/index.coffee && node app.js",
     "live": "cross-env NODE_ENV=live webpack --config config/webpack/index.coffee",
     "test": "cross-env NODE_ENV=spec webpack --config config/webpack/index.coffee && ava --verbose --color"
   },
