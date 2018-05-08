@@ -63,36 +63,18 @@
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 22);
+/******/ 	return __webpack_require__(__webpack_require__.s = 21);
 /******/ })
 /************************************************************************/
 /******/ ([
 /* 0 */
-/***/ (function(module, exports) {
-
-module.exports = require("child_process");
-
-/***/ }),
-/* 1 */
-/***/ (function(module, exports) {
-
-module.exports = require("fs");
-
-/***/ }),
-/* 2 */
-/***/ (function(module, exports) {
-
-module.exports = require("lodash");
-
-/***/ }),
-/* 3 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var bodyParser, logger;
 
-bodyParser = __webpack_require__(6);
+bodyParser = __webpack_require__(3);
 
-logger = __webpack_require__(8);
+logger = __webpack_require__(4);
 
 module.exports = function(app, conf) {
   app.use(logger('dev'));
@@ -106,522 +88,33 @@ module.exports = function(app, conf) {
 
 
 /***/ }),
-/* 4 */
-/***/ (function(module, exports, __webpack_require__) {
+/* 1 */
+/***/ (function(module, exports) {
 
-var ObjectId, _, fs, giji, mongo, sh;
-
-mongo = __webpack_require__(7);
-
-sh = __webpack_require__(0);
-
-fs = __webpack_require__(1);
-
-_ = __webpack_require__(2);
-
-ObjectId = false;
-
-giji = {};
-
-module.exports = function(app, {url, db}) {
-  if (!db.mongo_sow) {
-    return;
-  }
-  mongo.connect(db.mongo_sow).then(function(db) {
-    var end;
-    end = function(err, o) {
-      return console.log(err, o);
-    };
-    giji.find = function(id, query, projection) {
-      return db.collection(id, {ObjectId}).find(query, projection);
-    };
-    giji.aggregate_message = function() {
-      var cmd;
-      cmd = function(out, keys, ...ext) {
-        return db.collection("message_by_story_for_face", {ObjectId}).aggregate([
-          ...ext,
-          {
-            $group: {
-              _id: keys,
-              date_min: {
-                $min: "$date_min"
-              },
-              date_max: {
-                $max: "$date_max"
-              },
-              max: {
-                $max: "$max"
-              },
-              all: {
-                $sum: "$all"
-              },
-              count: {
-                $sum: "$count"
-              },
-              story_ids: {
-                $addToSet: "$_id.story_id"
-              }
-            }
-          },
-          {
-            $out: out
-          }
-        ], {ObjectId});
-      };
-      return Promise.all([
-        cmd("message_for_face",
-        {
-          face_id: "$_id.face_id"
-        }),
-        cmd("message_for_face_sow_auth",
-        {
-          face_id: "$_id.face_id",
-          sow_auth_id: "$_id.sow_auth_id"
-        }),
-        cmd("message_for_face_mestype",
-        {
-          face_id: "$_id.face_id",
-          mestype: "$_id.mestype"
-        })
-      ]);
-    };
-    giji.aggregate_potof = function() {
-      var cmd;
-      cmd = function(out, keys, ...ext) {
-        return db.collection("potofs", {ObjectId}).aggregate([
-          ...ext,
-          {
-            $match: {
-              sow_auth_id: {
-                $exists: 1,
-                $nin: [null,
-          "master",
-          "admin"]
-              },
-              face_id: {
-                $exists: 1,
-                $ne: null
-              }
-            }
-          },
-          {
-            $group: {
-              _id: keys,
-              date_min: {
-                $min: "$timer.entrieddt"
-              },
-              date_max: {
-                $max: "$timer.entrieddt"
-              },
-              story_ids: {
-                $addToSet: "$story_id"
-              }
-            }
-          },
-          {
-            $out: out
-          }
-        ], {ObjectId});
-      };
-      return Promise.all([
-        cmd("potof_for_face",
-        {
-          face_id: "$face_id"
-        }),
-        cmd("potof_for_face_live",
-        {
-          face_id: "$face_id",
-          live: "$live"
-        }),
-        cmd("potof_for_face_sow_auth",
-        {
-          face_id: "$face_id",
-          sow_auth_id: "$sow_auth_id"
-        }),
-        cmd("potof_for_face_role",
-        {
-          face_id: "$face_id",
-          role_id: "$role"
-        },
-        {
-          $unwind: "$role"
-        })
-      ]);
-    };
-    giji.aggregate_max = function() {
-      return db.collection("potof_for_face_sow_auth_max", {ObjectId}).remove({}).then(function() {
-        return db.collection("potof_for_face_sow_auth", {ObjectId}).aggregate([
-          {
-            $project: {
-              _id: 1,
-              count: {
-                $size: "$story_ids"
-              }
-            }
-          },
-          {
-            $group: {
-              _id: {
-                face_id: "$_id.face_id"
-              },
-              count: {
-                $max: "$count"
-              }
-            }
-          }
-        ], {ObjectId});
-      }).then(function(data) {
-        return Promise.all(data.map(function(o) {
-          return giji.find("potof_for_face_sow_auth", {
-            "_id.face_id": o._id.face_id,
-            story_ids: {
-              $size: o.count
-            }
-          }).then(function(list) {
-            var top;
-            [top] = _.sortBy(list, function(a) {
-              return a.date_min;
-            });
-            o.date_min = top.date_min;
-            o.date_max = top.date_max;
-            o._id = top._id;
-            return o;
-          });
-        }));
-      }).then(function(data) {
-        return db.collection("potof_for_face_sow_auth_max", {ObjectId}).insert(data);
-      });
-    };
-    giji.oldlog = function() {
-      return db.collection("stories", {ObjectId}).aggregate([
-        {
-          $match: {
-            is_finish: {
-              $eq: true
-            }
-          }
-        },
-        {
-          $project: {
-            _id: 1
-          }
-        },
-        {
-          $group: {
-            _id: null,
-            story_ids: {
-              $addToSet: "$_id"
-            }
-          }
-        }
-      ], {ObjectId}).then(function([o]) {
-        var data, dst, id, src;
-        data = (function() {
-          var i, len, ref, results;
-          ref = o.story_ids;
-          results = [];
-          for (i = 0, len = ref.length; i < len; i++) {
-            id = ref[i];
-            dst = `./static/sow/${id}.json.gz`;
-            src = `${url.api}/story/oldlog/${id}`;
-            results.push(`  ls "${dst}" || curl "${src}" | gzip --stdout --best > "${dst}"  `);
-          }
-          return results;
-        })();
-        dst = "./static/sow/index.json.gz";
-        src = `${url.api}/story/oldlog`;
-        data.push(` curl "${src}" | gzip --stdout --best > "${dst}"  `);
-        dst = "./static/aggregate/faces/index.json.gz";
-        src = `${url.api}/aggregate/faces`;
-        data.push(` curl "${src}" | gzip --stdout --best > "${dst}"  `);
-        data.push(" npm run gulp amazon:gz ");
-        fs.writeFile('./static/sow.sh', data.join("\n"), function(err) {
-          return fs.chmod('./static/sow.sh', '+x', function(err) {});
-        });
-        return false;
-      });
-    };
-    giji.scan = function() {
-      return db.collection("message_by_story_for_face", {ObjectId}).aggregate([
-        {
-          $group: {
-            _id: null,
-            story_ids: {
-              $addToSet: "$_id.story_id"
-            }
-          }
-        }
-      ], {ObjectId}).then(function([o]) {
-        var list, ref;
-        list = (ref = o != null ? o.story_ids : void 0) != null ? ref : [];
-        return db.collection("stories", {ObjectId}).aggregate([
-          {
-            $match: {
-              _id: {
-                $nin: list
-              },
-              is_finish: {
-                $eq: true
-              }
-            }
-          },
-          {
-            $project: {
-              _id: 1
-            }
-          },
-          {
-            $group: {
-              _id: null,
-              story_ids: {
-                $addToSet: "$_id"
-              }
-            }
-          }
-        ], {ObjectId});
-      }).then(function([o]) {
-        var id, list, ref, set_bases;
-        list = (ref = o != null ? o.story_ids : void 0) != null ? ref : [];
-        console.log("step B");
-        console.log(list);
-        set_bases = (function() {
-          var i, len, results;
-          results = [];
-          for (i = 0, len = list.length; i < len; i++) {
-            id = list[i];
-            results.push(giji.set_base(id));
-          }
-          return results;
-        })();
-        return Promise.all(set_bases);
-      });
-    };
-    return giji.set_base = function(story_id) {
-      return db.collection("messages", {ObjectId}).aggregate([
-        {
-          $match: {
-            story_id: story_id,
-            sow_auth_id: {
-              $exists: 1,
-              $ne: null
-            },
-            face_id: {
-              $exists: 1,
-              $ne: null
-            },
-            logid: {
-              $exists: 1,
-              $ne: null
-            },
-            log: {
-              $exists: 1,
-              $ne: null
-            }
-          }
-        },
-        {
-          $project: {
-            sow_auth_id: 1,
-            story_id: 1,
-            face_id: 1,
-            logid: 1,
-            date: 1,
-            size: {
-              $strLenCP: "$log"
-            }
-          }
-        },
-        {
-          $group: {
-            _id: {
-              sow_auth_id: "$sow_auth_id",
-              story_id: "$story_id",
-              face_id: "$face_id",
-              mestype: {
-                $substr: ["$logid",
-        0,
-        2]
-              }
-            },
-            date_min: {
-              $min: "$date"
-            },
-            date_max: {
-              $max: "$date"
-            },
-            max: {
-              $max: "$size"
-            },
-            all: {
-              $sum: "$size"
-            },
-            count: {
-              $sum: 1
-            }
-          }
-        }
-      ], {ObjectId}).then(function(data) {
-        return db.collection("message_by_story_for_face").insert(data);
-      });
-    };
-  }).catch(function() {
-    return console.log("!!! mongodb connect error !!!");
-  });
-  app.get('/api/aggregate/job', function(req, res, next) {
-    return giji.scan().then(function() {
-      return giji.aggregate_message();
-    }).then(function() {
-      return giji.aggregate_potof();
-    }).then(function() {
-      return giji.aggregate_max();
-    }).then(function() {
-      return giji.oldlog();
-    }).then(function() {
-      res.json({
-        started: true
-      });
-      return next();
-    }).catch(function(e) {
-      res.json(e);
-      return next();
-    });
-  });
-  app.get('/api/aggregate/faces', function(req, res, next) {
-    var q;
-    q = {};
-    return Promise.all([giji.find("message_for_face", q), giji.find("potof_for_face", q), giji.find("potof_for_face_sow_auth_max", q)]).then(function([m_faces, faces, sow_auths]) {
-      res.json({m_faces, faces, sow_auths});
-      return next();
-    }).catch(function(e) {
-      console.error(req, e);
-      return next();
-    });
-  });
-  app.get('/api/aggregate/faces/:id', function(req, res, next) {
-    var id, q;
-    ({id} = req.params);
-    q = {
-      "_id.face_id": id
-    };
-    return Promise.all([giji.find("message_for_face", q), giji.find("message_for_face_mestype", q), giji.find("message_for_face_sow_auth", q), giji.find("potof_for_face", q), giji.find("potof_for_face_role", q), giji.find("potof_for_face_live", q)]).then(function([m_faces, mestypes, sow_auths, faces, roles, lives]) {
-      res.json({m_faces, mestypes, sow_auths, faces, roles, lives});
-      return next();
-    }).catch(function(e) {
-      console.error(req, e);
-      return next();
-    });
-  });
-  app.get('/api/story/progress', function(req, res, next) {
-    var fields, json, q;
-    q = {
-      is_epilogue: false,
-      is_finish: false
-    };
-    fields = {
-      comment: 0,
-      password: 0
-    };
-    json = {};
-    return giji.find("stories", q, fields).then(function(data) {
-      json.stories = data;
-      return data.map(function(o) {
-        return `${o._id}-0`;
-      });
-    }).then(function(ids) {
-      return giji.find("events", {
-        _id: {
-          $in: ids
-        }
-      });
-    }).then(function(data) {
-      return json.events = data;
-    }).then(function() {
-      res.json(json);
-      return next();
-    }).catch(function(e) {
-      console.error(req, e);
-      return next();
-    });
-  });
-  app.get('/api/story/oldlog', function(req, res, next) {
-    var fields, q;
-    q = {
-      is_epilogue: true,
-      is_finish: true
-    };
-    fields = {
-      comment: 0,
-      password: 0
-    };
-    return Promise.all([giji.find("stories", q, fields), giji.find("potof_for_face", {})]).then(function([stories, faces]) {
-      res.json({stories, faces});
-      return next();
-    }).catch(function(e) {
-      console.error(req, e);
-      return next();
-    });
-  });
-  app.get('/api/story/oldlog/:story_id', function(req, res, next) {
-    var fields, story_id;
-    ({story_id} = req.params);
-    fields = {
-      password: 0
-    };
-    return Promise.all([
-      giji.find("stories",
-      {
-        _id: story_id,
-        is_epilogue: true,
-        is_finish: true
-      },
-      fields),
-      giji.find("messages",
-      {story_id}),
-      giji.find("events",
-      {story_id}),
-      giji.find("potofs",
-      {story_id})
-    ]).then(function([stories, messages, events, potofs]) {
-      if (!stories.length) {
-        messages = events = potofs = [];
-      }
-      res.json({stories, messages, events, potofs});
-      return next();
-    }).catch(function(e) {
-      console.error(req, e);
-      return next();
-    });
-  });
-};
-
+throw new Error("Module build failed: Error: C:\\Dropbox\\www\\giji-sow-api\\api\\mongodb.coffee:158:39: error: octal literal '0777' must be prefixed with '0o'\n          fs.chmod './static/sow.sh', \u001b[1;31m0777\u001b[0m, (err)->\n\u001b[1;31m                                      ^^^^\u001b[0m\n    L157:           fs.chmod './static/sow.sh', 0777, (err)->\n                                               ^\n\n    at Object.module.exports (C:\\Dropbox\\www\\giji-sow-api\\node_modules\\coffee-loader\\index.js:38:9)");
 
 /***/ }),
-/* 5 */
+/* 2 */
 /***/ (function(module, exports) {
 
 module.exports = require("express");
 
 /***/ }),
-/* 6 */
+/* 3 */
 /***/ (function(module, exports) {
 
 module.exports = require("body-parser");
 
 /***/ }),
-/* 7 */
-/***/ (function(module, exports) {
-
-module.exports = require("mongodb-bluebird");
-
-/***/ }),
-/* 8 */
+/* 4 */
 /***/ (function(module, exports) {
 
 module.exports = require("morgan");
 
 /***/ }),
-/* 9 */,
-/* 10 */
+/* 5 */,
+/* 6 */,
+/* 7 */
 /***/ (function(module, exports) {
 
 var check;
@@ -860,7 +353,7 @@ module.exports = function(app, {test, http, bless}) {
 
 
 /***/ }),
-/* 11 */
+/* 8 */
 /***/ (function(module, exports) {
 
 var check;
@@ -907,7 +400,7 @@ module.exports = function(app, {test, http, bless}) {
 
 
 /***/ }),
-/* 12 */
+/* 9 */
 /***/ (function(module, exports) {
 
 var user;
@@ -961,51 +454,63 @@ module.exports = function(app, {test, http, bless}) {
 
 
 /***/ }),
-/* 13 */
+/* 10 */
 /***/ (function(module, exports) {
 
 module.exports = require("ava");
 
 /***/ }),
-/* 14 */,
-/* 15 */,
-/* 16 */
+/* 11 */,
+/* 12 */,
+/* 13 */
+/***/ (function(module, exports) {
+
+module.exports = require("fs");
+
+/***/ }),
+/* 14 */
 /***/ (function(module, exports) {
 
 module.exports = require("js-yaml");
 
 /***/ }),
-/* 17 */
+/* 15 */
+/***/ (function(module, exports) {
+
+module.exports = require("lodash");
+
+/***/ }),
+/* 16 */
 /***/ (function(module, exports) {
 
 module.exports = require("mongoose");
 
 /***/ }),
-/* 18 */
+/* 17 */
 /***/ (function(module, exports) {
 
 module.exports = require("supertest");
 
 /***/ }),
+/* 18 */,
 /* 19 */,
 /* 20 */,
-/* 21 */,
-/* 22 */
+/* 21 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var _, app, bless, conf, express, fs, http, mongoose, supertest, test, user, yaml;
 
-test = __webpack_require__(13);
+test = __webpack_require__(10);
 
-express = __webpack_require__(5);
+express = __webpack_require__(2);
 
-mongoose = __webpack_require__(17);
+mongoose = __webpack_require__(16);
 
-supertest = __webpack_require__(18);
+supertest = __webpack_require__(17);
 
-fs = __webpack_require__(1);
+fs = __webpack_require__(13);
 
-yaml = __webpack_require__(16);
+yaml = __webpack_require__(14);
 
 conf = yaml.load(fs.readFileSync("./config/spec.yml", 'UTF-8'));
 
@@ -1021,7 +526,7 @@ user = {
   account: "user"
 };
 
-_ = __webpack_require__(2);
+_ = __webpack_require__(15);
 
 bless = function(t) {
   t.match = function(tgt, chk) {
@@ -1050,9 +555,9 @@ bless = function(t) {
 
 app = express();
 
-__webpack_require__(3)(app, conf);
+__webpack_require__(0)(app, conf);
 
-__webpack_require__(4)(app, conf);
+__webpack_require__(1)(app, conf);
 
 app.post('/test/session', function(req, res, next) {
   var base, base1;
@@ -1067,11 +572,11 @@ app.post('/test/session', function(req, res, next) {
 
 http = supertest.agent(app);
 
-__webpack_require__(12)(app, {test, bless, http});
+__webpack_require__(9)(app, {test, bless, http});
 
-__webpack_require__(10)(app, {test, bless, http});
+__webpack_require__(7)(app, {test, bless, http});
 
-__webpack_require__(11)(app, {test, bless, http});
+__webpack_require__(8)(app, {test, bless, http});
 
 
 /***/ })
