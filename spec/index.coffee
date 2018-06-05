@@ -1,6 +1,5 @@
 test = require 'ava'
 express = require 'express'
-mongoose = require "mongoose"
 supertest = require 'supertest'
 
 fs = require 'fs'

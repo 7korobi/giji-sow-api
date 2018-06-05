@@ -252,9 +252,14 @@ module.exports = (app, { url, db })->
     .then ->
       giji.oldlog()
     .then ->
-      res.json
-        started: true
-      next()
+      sh.exec "./static/sow.sh", (err, stdout, stderr)->
+        if err
+          console.error err
+        else
+          console.log stderr
+        res.json
+          started: ! err
+        next()
     .catch (e)->
       res.json e
       next()

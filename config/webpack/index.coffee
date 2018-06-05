@@ -1,8 +1,14 @@
-path   = require 'path'
-
-coffee = /\.coffee$/
-yml    = /\.yml$/
+nodeExternals = require 'webpack-node-externals'
+path = require 'path'
 current = process.cwd()
+
+coffee =
+  test: /\.coffee$/,
+  loader: 'coffee-loader'
+
+yml =
+  test: /\.yml$/,
+  loader: 'json-loader!yaml-loader'
 
 module.exports =
   target: 'node'
@@ -26,16 +32,9 @@ module.exports =
  
   module:
     rules: [
-      test: coffee
-      loader: 'coffee-loader'
-    ,
-      test: yml
-      loader: 'json-loader!yaml-loader'
+      coffee
+      yml
     ]
 
   plugins: []
-
-  externals: (ctx, req, cb)->
-    return cb() if /\//.test req
-    return cb() if yml.test req
-    cb null, 'commonjs2 ' + req
+  externals: [nodeExternals()]
