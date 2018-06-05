@@ -155,12 +155,20 @@ module.exports = (app, { url, db })->
         data.push """ npm run gulp amazon:gz """
 
         fs.writeFile './static/sow.sh', data.join("\n") , (err)->
-          fs.chmod './static/sow.sh', 0o777, (err)->
-            sh.exec "./static/sow.sh", (err, stdout, stderr)->
+          if err
+            console.error err
+          else
+            console.log "write."
+            fs.chmod './static/sow.sh', 0o777, (err)->
               if err
                 console.error err
               else
-                console.log stderr
+                console.log "chmod."
+                sh.exec "./static/sow.sh", (err, stdout, stderr)->
+                  if err
+                    console.error err
+                  else
+                    console.log stderr
         false
 
     giji.scan = ->
