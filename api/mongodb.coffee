@@ -156,6 +156,11 @@ module.exports = (app, { url, db })->
 
         fs.writeFile './static/sow.sh', data.join("\n") , (err)->
           fs.chmod './static/sow.sh', 0o777, (err)->
+            sh.exec "./static/sow.sh", (err, stdout, stderr)->
+              if err
+                console.error err
+              else
+                console.log stderr
         false
 
     giji.scan = ->
@@ -252,14 +257,9 @@ module.exports = (app, { url, db })->
     .then ->
       giji.oldlog()
     .then ->
-      sh.exec "./static/sow.sh", (err, stdout, stderr)->
-        if err
-          console.error err
-        else
-          console.log stderr
-        res.json
-          started: ! err
-        next()
+      res.json
+        started: true
+      next()
     .catch (e)->
       res.json e
       next()
