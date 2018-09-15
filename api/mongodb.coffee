@@ -53,14 +53,17 @@ module.exports = (app, { url, db })->
 
 
     giji.aggregate_potof = ->
-      cmd = (out, keys, ext...)->
+      cmd = (out, story_ids, keys, ext...)->
         db.collection("potofs", {ObjectId}).aggregate [
           ext...
         ,
           $match:
+            story_id:
+              $exists: 1
+              $nin: story_ids
             sow_auth_id:
               $exists: 1
-              $nin: [null, "master", "admin"]
+              $nin: [null, "master", "admin", "a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8", "a9"]
             face_id:
               $exists: 1
               $ne: null
@@ -78,21 +81,24 @@ module.exports = (app, { url, db })->
           $out: out
         ], {ObjectId}
 
-      Promise.all [
-        cmd "potof_for_face",
-          face_id: "$face_id"
-        cmd "potof_for_face_live",
-          face_id: "$face_id"
-          live: "$live"
-        cmd "potof_for_face_sow_auth",
-          face_id:     "$face_id"
-          sow_auth_id: "$sow_auth_id"
-        cmd "potof_for_face_role",
-          face_id: "$face_id"
-          role_id: "$role"
-        ,
-          $unwind: "$role"
-      ]
+      giji.find "stories", { is_finish: false }, { _id: 1 }
+      .then (data)->
+        story_ids = data.map ({ _id })-> _id
+        Promise.all [
+          cmd "potof_for_face", story_ids,
+            face_id: "$face_id"
+          cmd "potof_for_face_live", story_ids,
+            face_id: "$face_id"
+            live: "$live"
+          cmd "potof_for_face_sow_auth", story_ids,
+            face_id:     "$face_id"
+            sow_auth_id: "$sow_auth_id"
+          cmd "potof_for_face_role", story_ids,
+            face_id: "$face_id"
+            role_id: "$role"
+          ,
+            $unwind: "$role"
+        ]
 
     giji.aggregate_max = ->
       db.collection("potof_for_face_sow_auth_max", { ObjectId }).remove({})
