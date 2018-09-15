@@ -84,6 +84,7 @@ module.exports = (app, { url, db })->
       giji.find "stories", { is_finish: false }, { _id: 1 }
       .then (data)->
         story_ids = data.map ({ _id })-> _id
+        console.log story_ids, "is progress (deny)."
         Promise.all [
           cmd "potof_for_face", story_ids,
             face_id: "$face_id"
