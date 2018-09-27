@@ -18,6 +18,31 @@ module.exports = (app, { url, db })->
       .find query, projection
 
     giji.aggregate_message = ->
+      firsts = (out, keys, ext...)->
+        db.collection(out, { ObjectId }).remove({})
+        .then ->
+          db.collection("message_by_story_for_face", {ObjectId}).aggregate [
+            $sort:
+              date_min: 1
+          ,
+            $group:
+              _id: keys
+              date:
+                $min: "$date_min"
+          ,
+            $out: "#{out}_date_mins"
+          ], {ObjectId}
+        .then (data)->
+          Promise.all data.map ({ _id, date })->
+            { story_id, face_id, mestype } = _id
+            db.collection("messags", {ObjectId})
+            .find({ story_id, face_id, date })
+            .then (o)->
+              o.q = _id
+              o
+        .then (data)->
+          db.collection(out, { ObjectId }).insert data
+
       cmd = (out, keys, ext...)->
         db.collection("message_by_story_for_face", {ObjectId}).aggregate [
           ext...
@@ -49,6 +74,10 @@ module.exports = (app, { url, db })->
         cmd "message_for_face_mestype",
           face_id: "$_id.face_id"
           mestype: "$_id.mestype"
+        firsts "message_firsts_for_story_face_mestype",
+          story_id: "$_id.story_id"
+          face_id:  "$_id.face_id"
+          mestype:  "$_id.mestype"
       ]
 
 
