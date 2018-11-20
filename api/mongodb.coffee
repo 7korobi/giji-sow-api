@@ -344,7 +344,11 @@ module.exports = (app, { url, db })->
 
   app.get '/api/plan/progress', (req, res, next)->
     q =
-      state: /議事/
+      state:
+        $in: [
+          null
+          /議事/
+        ]
     giji.find "sow_village_plans", q
     .then (data)->
       res.json { plans: data }
