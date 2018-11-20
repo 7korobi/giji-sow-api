@@ -341,6 +341,18 @@ module.exports = (app, { url, db })->
       console.error req, e
       next()
 
+
+  app.get '/api/plan/progress', (req, res, next)->
+    q =
+      state: /議事/
+    giji.find "sow_village_plans", q
+    .then (data)->
+      res.json { plans: data }
+      next()
+    .catch (e)->
+      console.error req, e
+      next()
+
   app.get '/api/story/progress', (req, res, next)->
     q =
       is_epilogue: false
