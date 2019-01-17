@@ -35,13 +35,16 @@ module.exports = (app, { url, db })->
         .then (data)->
           Promise.all data.map ({ _id, date })->
             { story_id, face_id, mestype } = _id
+            console.log { c: 'messages', story_id, face_id, date }
             db.collection("messags", {ObjectId})
             .find({ story_id, face_id, date })
             .then (o)->
               o.q = _id
               o
         .then (data)->
-          db.collection(out, { ObjectId }).insert data
+          console.log { out, keys, ext, data_size: data.length }
+          if data.length
+            db.collection(out, { ObjectId }).insert data
 
       cmd = (out, keys, ext...)->
         db.collection("message_by_story_for_face", {ObjectId}).aggregate [
@@ -64,7 +67,6 @@ module.exports = (app, { url, db })->
         ,
           $out: out
         ], {ObjectId}
-
       Promise.all [
         cmd "message_for_face",
           face_id: "$_id.face_id"
@@ -109,6 +111,8 @@ module.exports = (app, { url, db })->
         ,
           $out: out
         ], {ObjectId}
+        .then ->
+          console.log { out, keys, ext, story_ids }
 
       giji.find "stories", { is_finish: false }, { _id: 1 }
       .then (data)->
@@ -158,6 +162,7 @@ module.exports = (app, { url, db })->
             o._id      = top._id
             o
       .then (data)->
+        console.log "potof_for_face_sow_auth_max insert #{data.length} data."
         db.collection("potof_for_face_sow_auth_max", { ObjectId }).insert data
 
     giji.oldlog = ->
@@ -240,6 +245,7 @@ module.exports = (app, { url, db })->
         Promise.all set_bases
 
     giji.set_base = (story_id)->
+      console.log "step for #{story_id}"
       db.collection("messages", { ObjectId }).aggregate [
         $match:
           story_id: story_id
@@ -284,8 +290,10 @@ module.exports = (app, { url, db })->
             $sum: 1
       ], {ObjectId}
       .then (data)->
-        db.collection("message_by_story_for_face").insert data
-
+        if data.length
+          db.collection("message_by_story_for_face").insert data
+        else
+          console.log "#{story_id} for message_by_story_for_face size 0."
   .catch ->
     console.log "!!! mongodb connect error !!!"
 
