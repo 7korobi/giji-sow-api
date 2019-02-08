@@ -351,13 +351,17 @@ module.exports = (app, { url, db })->
 
 
   app.get '/api/plan/progress', (req, res, next)->
-    q =
+    range = 1000 * 3600 * 24 * 50 # 50 days
+    limit = new Date( new Date() - range )
+
+    giji.find "sow_village_plans",
+      write_at:
+        $gte: limit
       state:
         $in: [
           null
           /議事/
         ]
-    giji.find "sow_village_plans", q
     .then (data)->
       res.json { plans: data }
       next()
