@@ -19,7 +19,7 @@
     ]
   },
   "dependencies": {
-    "aws-sdk": "^2.315.0",
+    "aws-sdk": "^2.814.0",
     "coffee-loader": "^0.9.0",
     "coffeescript": "^2.2.4",
     "config": "^1.30.0",
