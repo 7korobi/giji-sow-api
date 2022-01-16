@@ -3,8 +3,8 @@ app = express()
 conf = require 'config'
 debug = require('debug')('giji-sow-api:server')
 
-{ pm_id } = process.env
-Object.assign conf, { pm_id }
+{ NODE_APP_INSTANCE } = process.env
+Object.assign conf, { NODE_APP_INSTANCE }
 process.on 'unhandledRejection', console.dir
 
 
@@ -14,7 +14,7 @@ if conf.use_api
   require("./mongodb.coffee" )(app, conf)
 
 host = ( conf.host || '127.0.0.1' )
-port = ( conf.port || 4000 ) + (pm_id - 0 || 0)
+port = ( conf.port || 4000 ) + 1 + (NODE_APP_INSTANCE - 0 || 0)
 
 app.set 'port', port
 app.listen port, host

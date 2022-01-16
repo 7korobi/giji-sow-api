@@ -193,7 +193,7 @@ module.exports = (app, { url, db })->
         src = "#{url.api}/aggregate/faces"
         data.push """ curl "#{src}" | gzip --stdout --best > "#{dst}"  """
 
-        data.push """ npm run gulp amazon:gz """
+        data.push """ npm run gulp amazon_gz """
 
         fs.writeFile './static/sow.sh', data.join("\n") , (err)->
           if err
